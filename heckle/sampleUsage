@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import csv
+import glob
+import os
+import requests
+
+
+def csv_dict_list(variables_file):
+    reader = csv.DictReader(open(variables_file, 'rt', encoding='latin-1', errors='surrogateescape'))
+    dict_list = []
+    for line in reader:
+        dict_list.append(line)
+    return dict_list
+
+splunk = 'SPLUNK_SERVER'
+port = 'HEC_PORT'
+token = "HEC_TOKEN"
+session = requests.session()
+def heckle(splunk, port, message, token, session):
+    token = "Splunk " + token
+    req = session.post(splunk + ":"+ port + "/services/collector/raw", headers = { 'Authorization':  token }, json = message)
+    if req.status_code == 200:
+        return True
+    else :
+        return req.text
+
+
+
+for fileName in glob.glob('/PATH/TO/CSV/*.csv'):
+    dicty = csv_dict_list('%s' % fileName)
+    buffer = []
+    for item in dicty:
+        buffer.append(item)
+        if len(buffer) < 50:
+            continue
+        if len(buffer) % 100 == 0:
+            heckle(splunk, port, item, token, session)
